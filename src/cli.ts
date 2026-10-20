@@ -9,6 +9,7 @@ import {
   publishCommand,
   specCommand,
   ticketsCommand,
+  triageCommand,
 } from './commands/flow.js';
 import {
   implementCommand,
@@ -42,7 +43,8 @@ program
 Workflow:
   handrail init
   handrail intake --prd PRD.md
-  handrail clarify --interactive
+  handrail triage <issue> --apply
+  handrail clarify --interactive --comment --write-docs
   handrail spec
   handrail approve spec <spec>
   handrail tickets <spec>
@@ -108,11 +110,23 @@ program
   });
 
 program
+  .command('triage <issue>')
+  .description('Investigate an incoming issue and draft a triage decision')
+  .option('--apply', 'post findings and update the triage label')
+  .action(async (issue: string, options) => {
+    await guard(async () => {
+      const global = program.opts();
+      await triageCommand({ cwd: global.cwd, verbose: global.verbose, issue, apply: options.apply });
+    });
+  });
+
+program
   .command('clarify [issue]')
   .description('Clarify a requirement and record decisions, assumptions and open questions')
   .option('-i, --interactive', 'ask one question at a time and record the answers')
   .option('--rounds <number>', 'maximum clarification rounds')
   .option('--comment', 'post the clarification summary to the issue')
+  .option('--write-docs', 'add confirmed glossary terms and proposed ADRs to the repository')
   .action(async (issue: string | undefined, options) => {
     await guard(async () => {
       const global = program.opts();
@@ -123,6 +137,7 @@ program
         interactive: options.interactive,
         rounds: options.rounds,
         comment: options.comment,
+        writeDocs: options.writeDocs,
       });
     });
   });

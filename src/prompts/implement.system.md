@@ -7,11 +7,11 @@ Rules:
 2. Read the spec, requirement, AGENTS.md, glossary, relevant ADRs and existing tests.
 3. If a business rule is ambiguous or a dependency is missing, stop and report. Do not guess.
 4. Stay inside the ticket. Do not refactor unrelated modules.
-5. Prefer test-driven development at the boundaries named by the spec.
+5. For complex business rules, calculations and bug fixes at the spec's test boundaries, use Red → Green → Refactor: first observe a failing test, make the smallest change that passes, then improve the code. For simple changes, choose checks proportional to risk.
 6. Run the relevant checks before finishing. Use the shell tool for builds and tests.
 7. Never claim a command passed unless it was actually executed and exited 0.
 8. Do not create a pull request, merge, close an issue, or edit `.handrail/` files.
-9. Commit your code to the current branch with a conventional message that includes the ticket number.
+9. Review your own diff for scope and standards before finishing. The workflow engine creates the commit and runs a separate review.
 10. Never change acceptance criteria to make a test pass.
 
 When finished, report:

@@ -16,6 +16,12 @@ simple idea: an AI agent may do the work, but a person owns the decision.
 6. `ready-for-agent` means "the input is prepared", never "approved".
 7. Small changes may use a lighter flow; process must match risk.
 
+The AI-native pack's `grill-with-docs`, `to-spec`, `to-tickets`, `implement`
+with TDD, `code-review`, `pr` and `retro` stages map to Handrail's `clarify`,
+`spec`, `tickets`/`publish`, `implement`, `review`, `pr` and `retro` commands.
+Handrail runs them through its configured agent provider. The external Skills
+plugin is optional; GitHub and CI remain the authoritative gates.
+
 ## 2. Roles
 
 | Role | Responsibility |
@@ -53,11 +59,15 @@ Command:
 
 ```bash
 handrail intake --prd PRD.md --title "Order import retry"
+handrail triage <issue> --apply  # optional for external or incomplete issues
 ```
 
 Handrail asks the agent to turn the PRD into a requirement issue without
 inventing rules. Ambiguity goes into "Open questions". The issue gets the
-requirement and needs-triage labels.
+requirement and needs-triage labels. `triage` checks nearby issues and relevant
+code, writes a draft, and only updates labels and posts findings with `--apply`.
+It never marks a generated task or spec as triaged, and `ready-for-agent` is
+still only an input-readiness signal.
 
 Human check:
 
@@ -71,21 +81,23 @@ Human check:
 Command:
 
 ```bash
-handrail clarify --interactive --comment
+handrail clarify --interactive --comment --write-docs
 ```
 
 The agent reads the issue, repository docs, glossary, ADRs and relevant files.
 It asks one material question at a time and records the answer. It separates:
 
 - confirmed decisions;
-- implementation assumptions;
+- implementation assumptions (separate from confirmed decisions);
 - open questions;
 - non-goals;
 - glossary terms;
 - ADR candidates.
 
 The result is written to `.handrail/drafts/clarify-<issue>.md` and optionally
-posted to the issue.
+posted to the issue. `--write-docs` adds glossary terms and writes proposed ADRs
+under the configured ADR directory only after material questions are resolved;
+the technical owner reviews proposed ADRs before accepting them.
 
 Passing criteria:
 
@@ -170,6 +182,11 @@ Handrail:
    output tail.
 7. Runs an independent review unless `--skip-review` is explicit.
 8. Stops if a check fails or the review blocks. The branch is kept.
+
+For complex business rules, calculations and bug fixes, the agent uses a
+Red → Green → Refactor loop at the agreed test boundary. Handrail runs the
+configured checks after the commit; PR creation accepts only results recorded
+for the current commit. A later commit requires new checks and review.
 
 The agent is told not to create a PR, merge, close issues, edit `.handrail/`, or
 change acceptance criteria to make a test pass.
@@ -294,17 +311,18 @@ separation matters more than the names.
 
 ## 13. Small changes
 
-A bug fix or a small change that fits one context window may use:
+A bug fix or a small change that fits one context window may use the repository's
+ordinary GitHub flow:
 
 ```bash
 git switch -c fix/issue-123
-handrail implement 123 --skip-review
-handrail pr 123 --create
+# Implement, run proportionate tests, commit, request independent review, open PR.
 ```
 
-Do not create a spec and tickets merely to satisfy process. Do not use the
-lightweight flow for a change that touches multiple behaviors, data migration,
-security or production configuration.
+Handrail's full-chain CLI commands require an approved spec and tickets. Do not
+create those artifacts merely to satisfy process. Do not use the lightweight
+flow for a change that touches multiple behaviors, data migration, security or
+production configuration.
 
 ## 14. Anti-patterns
 
@@ -324,6 +342,7 @@ security or production configuration.
 2. Verify every artifact is traceable to the next stage.
 3. Turn stable manual checks into CI checks.
 4. Add CODEOWNERS for critical directories.
-5. Compare cycle time, rework, CI first-pass rate and review findings before and
-   after the pilot.
+5. Compare requirement-to-merge time, rework, CI first-pass rate, useful review
+   findings, post-release defects, rollbacks, human correction time and total
+   cost per successful task against a baseline.
 6. Do not measure success by lines of generated code.

@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
-import { HandrailError } from '../errors.js';
-import { readTextIfExists } from '../fs.js';
+import { GateError, HandrailError } from '../errors.js';
+import { exists, readTextIfExists, writeText, writeTextAtomic } from '../fs.js';
 import { extractJson } from '../json.js';
 import { renderPrompt } from '../prompts.js';
 import { writeDraft } from './common.js';
@@ -13,6 +13,7 @@ export interface ClarifyOptions {
   interactive?: boolean;
   rounds?: number;
   comment?: boolean;
+  writeDocs?: boolean;
 }
 
 export async function clarify(
@@ -84,12 +85,64 @@ export async function clarify(
   const markdown = renderClarification(issueNumber, last, conversation);
   const file = await writeDraft(context, `clarify-${issueNumber}.md`, markdown);
 
+  if (options.writeDocs) {
+    if (!last.done || last.open_questions.length > 0) {
+      throw new GateError('Clarification still has open questions; domain docs were not written.');
+    }
+    await writeDomainDocs(context, issueNumber, last);
+  }
+
   if (options.comment) {
     await context.github.issueComment(issueNumber, markdown);
     context.logger.ok(`Posted clarification summary to #${issueNumber}.`);
   }
 
   return { result: last, file };
+}
+
+async function writeDomainDocs(context: Context, issueNumber: number, result: ClarificationResult): Promise<void> {
+  const glossaryFile = path.join(context.root, context.config.project.glossary);
+  const current = (await readTextIfExists(glossaryFile)) ?? '# Project Glossary\n\n| Term | Definition | Notes |\n|---|---|---|\n';
+  const existing = new Set(
+    [...current.matchAll(/^\|\s*([^|]+?)\s*\|/gm)].map((match) => match[1]!.trim().toLowerCase()),
+  );
+  const rows: string[] = [];
+  for (const item of result.glossary_terms) {
+    const term = item.term.trim();
+    const key = term.toLowerCase();
+    if (!term || !item.definition.trim() || existing.has(key)) continue;
+    existing.add(key);
+    rows.push(`| ${term.replace(/\|/g, '\\|')} | ${item.definition.replace(/\|/g, '\\|')} | Clarification #${issueNumber} |`);
+  }
+  if (rows.length > 0) {
+    await writeTextAtomic(glossaryFile, `${current.trimEnd()}\n${rows.join('\n')}\n`);
+    context.logger.ok(`Added ${rows.length} glossary term(s).`);
+  }
+  for (const [index, candidate] of result.adr_candidates.entries()) {
+    const file = path.join(context.root, context.config.project.adrDir, `proposed-${issueNumber}-${index + 1}.md`);
+    if (await exists(file)) continue;
+    await writeText(file, [
+      `# ${candidate.title}`,
+      '',
+      '## Status',
+      '',
+      'Proposed',
+      '',
+      '## Context',
+      '',
+      candidate.context || `Clarification for requirement #${issueNumber}.`,
+      '',
+      '## Decision',
+      '',
+      candidate.decision,
+      '',
+      '## Consequences',
+      '',
+      'To be reviewed by the technical owner.',
+      '',
+    ].join('\n'));
+    context.logger.ok(`Wrote proposed ADR: ${file}`);
+  }
 }
 
 export async function loadClarification(
@@ -105,6 +158,7 @@ function parseClarification(text: string): ClarificationResult {
   return {
     summary: stringValue(parsed.summary, ''),
     decisions: stringArray(parsed.decisions),
+    assumptions: stringArray(parsed.assumptions),
     open_questions: stringArray(parsed.open_questions),
     non_goals: stringArray(parsed.non_goals),
     glossary_terms: Array.isArray(parsed.glossary_terms)
@@ -143,6 +197,9 @@ function renderClarification(
     '',
     '## Confirmed decisions',
     ...(result.decisions.length > 0 ? result.decisions.map((item) => `- ${item}`) : ['- None']),
+    '',
+    '## Implementation assumptions',
+    ...(result.assumptions.length > 0 ? result.assumptions.map((item) => `- ${item}`) : ['- None']),
     '',
     '## Open questions',
     ...(result.open_questions.length > 0

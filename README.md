@@ -29,6 +29,11 @@ PRD
 Handrail never merges a pull request, never bypasses branch protection, and never
 turns an unexecuted test into a passing check.
 
+The AI-native workflow pack's `grill-with-docs`, `to-spec`, `to-tickets`,
+`implement` with TDD, `code-review`, `pr` and `retro` stages map to Handrail's
+commands. The external Skills plugin is optional when using Handrail's agent
+provider; GitHub holds the artifacts and CI plus human review control merging.
+
 ---
 
 ## Why Handrail exists
@@ -161,8 +166,11 @@ from stdin and writes its answer to stdout can be used.
 # 1. Requirement issue from a PRD
 handrail intake --prd PRD.md --title "Order import retry"
 
+# Optional: investigate an external or incomplete issue before clarification
+handrail triage 100 --apply
+
 # 2. Clarify. Interactive mode asks one question at a time.
-handrail clarify --interactive --comment
+handrail clarify --interactive --comment --write-docs
 
 # 3. Draft a spec, then approve it as a human
 handrail spec
@@ -203,7 +211,8 @@ handrail run 101
 | `handrail init [dir]` | Scaffold workflow files, detect checks, optionally create labels |
 | `handrail doctor` | Check Node, config, git, `gh`, auth, labels, checks and agent credentials |
 | `handrail intake --prd <file>` | Create a requirement issue |
-| `handrail clarify [issue]` | Record decisions, open questions, non-goals, glossary terms and ADR candidates |
+| `handrail triage <issue> [--apply]` | Investigate duplicates, existing behavior and missing information; optionally post findings and update labels |
+| `handrail clarify [issue]` | Record decisions, assumptions and open questions; `--write-docs` adds glossary terms and proposed ADRs |
 | `handrail spec [requirement]` | Create a spec issue linked to the requirement |
 | `handrail approve spec <issue>` | Add `spec-approved` and record the approver and body hash |
 | `handrail tickets [spec]` | Draft vertical-slice tickets and check the dependency graph |
@@ -230,8 +239,8 @@ Handrail enforces these gates in code, on GitHub, or both.
 |---|---|---|
 | Spec ready | `spec-approved` label, checked before tickets and implementation | Implementing an unreviewed contract |
 | Tickets ready | `tickets-approved` label, checked before publishing and implementation | Starting work from an unreviewed split |
-| Checks recorded | Evidence store, checked before PR creation | Claiming tests passed without executing them |
-| Review approved | Review JSON, checked before PR creation | Skipping independent review |
+| Checks recorded | Latest configured checks for the current commit, checked before PR creation | Claiming tests passed without executing them for this change |
+| Review approved | Review JSON bound to the current commit, checked before PR creation | Reusing a stale review |
 | Merge ready | GitHub branch protection, CI and CODEOWNERS | Self-approval, failing CI, direct pushes |
 | Acceptance | All tickets closed, all linked PRs merged, CI green | Closing a parent issue with unfinished work |
 
@@ -259,6 +268,17 @@ Every configured check and every shell command the agent runs is recorded:
 PR descriptions are generated from these records. If no check was executed, the
 PR says so and the policy check fails. There is no code path that turns an
 agent's sentence into a passing test result.
+
+For complex business rules, calculations and bug fixes, the implementation
+prompt calls for Red → Green → Refactor at the spec's test boundary. The CLI
+commits the change, runs configured checks, and records an independent
+Standards + Spec review. A later commit requires fresh checks and review.
+
+For a small change that fits one context window, use a single GitHub issue,
+branch, proportionate tests, independent review and PR through the repository's
+ordinary GitHub workflow. Handrail's full-chain commands require a spec and
+tickets; do not create them merely for process. Changes involving multiple
+behaviors, migration, security or production configuration use the full flow.
 
 Evidence lives under `.handrail/evidence/` and is ignored by git. The durable
 record is the PR conversation, CI result and merge commit.

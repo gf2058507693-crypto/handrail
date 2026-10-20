@@ -68,6 +68,15 @@ function mockText(request: AgentRequest): string {
         2,
       );
 
+    case 'triage':
+      return JSON.stringify({
+        status: 'needs-info',
+        summary: 'The mock agent cannot verify the reported behavior.',
+        missing_information: ['A reproducible example'],
+        related_issues: [],
+        code_evidence: [],
+      });
+
     case 'spec':
       return [
         '# Mock specification',

@@ -106,6 +106,7 @@ export interface TicketDraft {
 export interface ClarificationResult {
   summary: string;
   decisions: string[];
+  assumptions: string[];
   open_questions: string[];
   non_goals: string[];
   glossary_terms: Array<{ term: string; definition: string }>;

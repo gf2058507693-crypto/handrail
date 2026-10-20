@@ -38,6 +38,19 @@ describe('evidence store', () => {
     await expect(store.assertChecksPassed(3, true)).resolves.toEqual({ ok: true });
   });
 
+  it('uses the latest result for each configured command on the current commit', async () => {
+    const store = new EvidenceStore(root);
+    await store.record({ kind: 'check', ticket: 6, command: 'npm test', exitCode: 1, meta: { headSha: 'a' } });
+    await store.record({ kind: 'check', ticket: 6, command: 'npm test', exitCode: 0, meta: { headSha: 'a' } });
+    await store.record({ kind: 'check', ticket: 6, command: 'npm run build', exitCode: 0, meta: { headSha: 'a' } });
+    expect(await store.assertChecksPassed(6, true, 'a', ['npm test', 'npm run build'])).toEqual({ ok: true });
+    const stale = await store.assertChecksPassed(6, true, 'b', ['npm test', 'npm run build']);
+    expect(stale.ok).toBe(false);
+    expect(stale.reason).toMatch(/No check commands/);
+    const missing = await store.assertChecksPassed(6, true, 'a', ['npm test', 'npm run lint']);
+    expect(missing.reason).toMatch(/npm run lint/);
+  });
+
   it('fails when no checks exist and one is required', async () => {
     const store = new EvidenceStore(root);
     const gate = await store.assertChecksPassed(4, true);

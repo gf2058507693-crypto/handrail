@@ -39,8 +39,12 @@ export function evaluatePullRequest(input: PolicyInput): PolicyResult {
       violations.push(`PR references task #${task}, but the resolved task is #${input.task.number}.`);
     }
     const taskSpec = parseLinkedIssue(input.task.body, 'Spec');
-    if (spec && taskSpec && taskSpec !== spec) {
+    if (spec && taskSpec !== spec) {
       violations.push(`Task #${input.task.number} links Spec #${taskSpec}, but the PR links Spec #${spec}.`);
+    }
+    const taskRequest = parseLinkedIssue(input.task.body, 'Request');
+    if (request && taskRequest !== request) {
+      violations.push(`Task #${input.task.number} links Request #${taskRequest ?? '?'}, but the PR links Request #${request}.`);
     }
   }
 
@@ -64,11 +68,14 @@ export function evaluatePullRequest(input: PolicyInput): PolicyResult {
   }
 
   const closes = parseCloses(body);
-  if (input.task && !closes.includes(input.task.number)) {
-    violations.push(`PR must contain "Closes #${input.task.number}" and must not close parent issues.`);
+  if (task && (closes.length !== 1 || closes[0] !== task)) {
+    violations.push(`PR must close exactly task #${task}, and no other issue.`);
   }
   if (input.spec && closes.includes(input.spec.number)) {
     violations.push(`PR must not close spec #${input.spec.number}. Close it only after final acceptance.`);
+  }
+  if (request && closes.includes(request)) {
+    violations.push(`PR must not close requirement #${request}.`);
   }
 
   const evidence = extractSection(body, 'Evidence');

@@ -17,6 +17,7 @@ Return only a JSON object with this shape:
 {
   "summary": "short state of the clarification",
   "decisions": ["confirmed business rule or decision"],
+  "assumptions": ["unconfirmed implementation assumption; never a requirement"],
   "open_questions": ["question that is still unanswered"],
   "non_goals": ["explicitly out of scope"],
   "glossary_terms": [{"term": "...", "definition": "..."}],

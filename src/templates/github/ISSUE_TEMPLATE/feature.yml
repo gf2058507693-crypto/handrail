@@ -1,7 +1,7 @@
 name: Feature request
 description: Propose a feature with testable acceptance criteria
 title: "[Feature]: "
-labels: ["enhancement", "needs-triage"]
+labels: ["requirement", "needs-triage"]
 body:
   - type: textarea
     id: goal
@@ -34,6 +34,23 @@ body:
       description: Compatibility, performance, data, security, or rollout constraints.
     validations:
       required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacted users and areas
+      description: Who is affected, and which workflows or interfaces change?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
   - type: textarea
     id: non_goals
     attributes:

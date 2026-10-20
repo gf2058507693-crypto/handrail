@@ -126,6 +126,7 @@ export async function runChecks(
   }
 
   const failed: string[] = [];
+  const headSha = await context.git.revParse('HEAD');
   for (const command of input.commands) {
     context.logger.info(`Running check: ${command}`);
     const result = await (await import('../exec.js')).runCommand(command, {
@@ -136,6 +137,7 @@ export async function runChecks(
       ticket: input.ticket,
       spec: input.spec,
       label: 'configured check',
+      headSha: headSha ?? undefined,
     });
     if (result.exitCode === 0) {
       context.logger.ok(`Check passed: ${command}`);
@@ -152,17 +154,22 @@ export async function runChecks(
   return { ok: failed.length === 0, failed };
 }
 
-export async function evidenceMarkdown(context: Context, ticket: number): Promise<string> {
+export async function evidenceMarkdown(context: Context, ticket: number, headSha?: string): Promise<string> {
   const records = await context.evidence.list({ ticket });
   if (records.length === 0) return '_No commands were recorded._';
-  const rows = records
-    .filter((record) => record.kind === 'check' || record.kind === 'command')
+  const latest = new Map<string, (typeof records)[number]>();
+  for (const record of records) {
+    if (record.kind !== 'check' || !record.command) continue;
+    if (headSha !== undefined && record.meta?.headSha !== headSha) continue;
+    latest.set(record.command, record);
+  }
+  const rows = [...latest.values()]
     .map((record) => {
       const command = (record.command ?? record.kind).replace(/\|/g, '\\|');
       const result = record.exitCode === 0 ? 'PASS' : 'FAIL';
       return `| \`${command}\` | ${result} | ${record.exitCode ?? '-'} | ${record.durationMs ?? '-'} ms | ${record.timestamp} |`;
     });
-  if (rows.length === 0) return '_No build or test commands were recorded._';
+  if (rows.length === 0) return '_No automated checks executed for this commit._';
   return [
     '| Command | Result | exit_code | Duration | Recorded at |',
     '|---|---|---|---|---|',

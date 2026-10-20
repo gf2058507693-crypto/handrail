@@ -6,6 +6,7 @@ import { clarify } from '../core/workflow/clarify.js';
 import { intake } from '../core/workflow/intake.js';
 import { createSpec } from '../core/workflow/spec.js';
 import { planTickets, publishTickets } from '../core/workflow/tickets.js';
+import { triageIssue } from '../core/workflow/triage.js';
 import { parseIssueNumber, resolveRequirement, resolveSpec } from './helpers.js';
 
 export interface FlowContextOptions {
@@ -37,6 +38,7 @@ export async function clarifyCommand(
     interactive?: boolean;
     rounds?: string;
     comment?: boolean;
+    writeDocs?: boolean;
   },
 ): Promise<void> {
   const context = await createContext(options.cwd, new Logger({ verbose: options.verbose }));
@@ -46,7 +48,15 @@ export async function clarifyCommand(
     interactive: options.interactive,
     rounds,
     comment: options.comment,
+    writeDocs: options.writeDocs,
   });
+}
+
+export async function triageCommand(
+  options: FlowContextOptions & { issue: string; apply?: boolean },
+): Promise<void> {
+  const context = await createContext(options.cwd, new Logger({ verbose: options.verbose }));
+  await triageIssue(context, parseIssueNumber(options.issue), options.apply);
 }
 
 export async function specCommand(

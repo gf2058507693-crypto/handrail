@@ -75,6 +75,9 @@ validation and evidence without GitHub or a model.
 
 A GitHub issue with the requirement label. The body records source, business
 goal, scope, acceptance direction, constraints, open questions and non-goals.
+External or incomplete issues can pass through optional triage, which records
+related issues, code evidence and missing information before changing readiness
+labels. Triage never approves a spec or ticket.
 
 ### 4.2 Spec
 
@@ -211,6 +214,9 @@ generated script is deliberately dependency-free so it runs in any repository.
   first 400 characters, so prompt drift is visible.
 - Ticket cycles and unknown dependencies are rejected before any issue is created.
 - A review `block` verdict prevents PR creation.
+- Review and configured check records are bound to a commit. PR creation rejects
+  stale records after a new commit; a successful rerun replaces a previous
+  failure for the same command on that commit.
 - A failing check is recorded and prevents PR creation, but the branch and commit
   are kept for inspection.
 - The command provider and Anthropic provider both have timeouts. An agent run

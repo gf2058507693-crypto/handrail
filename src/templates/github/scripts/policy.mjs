@@ -72,8 +72,12 @@ if (task) {
     violations.push(`Task #${taskNumber} is missing the "${TASK_LABEL}" label.`);
   }
   const taskSpec = String(task.body ?? '').match(/Spec\s*:\s*#(\d+)/i);
-  if (taskSpec && specNumber && Number(taskSpec[1]) !== specNumber) {
-    violations.push(`Task #${taskNumber} links Spec #${taskSpec[1]}, not #${specNumber}.`);
+  if (specNumber && Number(taskSpec?.[1]) !== specNumber) {
+    violations.push(`Task #${taskNumber} links Spec #${taskSpec?.[1] ?? '?'}, not #${specNumber}.`);
+  }
+  const taskRequest = String(task.body ?? '').match(/Request\s*:\s*#(\d+)/i);
+  if (requestNumber && Number(taskRequest?.[1]) !== requestNumber) {
+    violations.push(`Task #${taskNumber} links Request #${taskRequest?.[1] ?? '?'}, not #${requestNumber}.`);
   }
 }
 
@@ -92,8 +96,8 @@ if (spec) {
 }
 
 const closes = [...body.matchAll(/\bCloses\s+#(\d+)/gi)].map((match) => Number(match[1]));
-if (taskNumber && !closes.includes(taskNumber)) {
-  violations.push(`PR must contain "Closes #${taskNumber}".`);
+if (taskNumber && (closes.length !== 1 || closes[0] !== taskNumber)) {
+  violations.push(`PR must close exactly task #${taskNumber}, and no other issue.`);
 }
 if (specNumber && closes.includes(specNumber)) {
   violations.push(`PR must not close spec #${specNumber}.`);

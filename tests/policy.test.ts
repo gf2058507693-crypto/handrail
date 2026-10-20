@@ -82,6 +82,14 @@ describe('pull request policy', () => {
     expect(result.violations.join('\n')).toMatch(/must not close spec/);
   });
 
+  it('rejects closing a second task and a mismatched request link', () => {
+    const body = `${validBody}\nCloses #999`;
+    const wrongTask = { ...task, body: 'Request: #500\nSpec: #101' };
+    const result = evaluatePullRequest({ body, task: wrongTask, spec, labels });
+    expect(result.violations.join('\n')).toMatch(/exactly task #102/);
+    expect(result.violations.join('\n')).toMatch(/links Request #500/);
+  });
+
   it('rejects a task that links a different spec', () => {
     const wrongTask = { ...task, body: 'Request: #100\nSpec: #999' };
     const result = evaluatePullRequest({ body: validBody, task: wrongTask, spec, labels });

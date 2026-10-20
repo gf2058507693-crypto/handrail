@@ -32,6 +32,9 @@ export async function reviewTicket(context: Context, ticketNumber: number): Prom
       `No commits on ${expectedBranch} compared to ${base}.`,
     );
   }
+  await context.git.assertClean('Commit or stash changes before recording a review.');
+  const headSha = await context.git.revParse('HEAD');
+  const baseSha = await context.git.revParse(base);
 
   const changedFiles = await context.git.changedFiles(base);
   const diff = await context.git.diff(base);
@@ -62,7 +65,7 @@ export async function reviewTicket(context: Context, ticketNumber: number): Prom
   const dir = path.join(context.root, '.handrail', 'evidence');
   await writeTextAtomic(
     path.join(dir, `review-${ticketNumber}.json`),
-    `${JSON.stringify(review, null, 2)}\n`,
+    `${JSON.stringify({ ...review, headSha, baseSha }, null, 2)}\n`,
   );
   await writeTextAtomic(path.join(dir, `review-${ticketNumber}.md`), renderReview(ticketNumber, review));
   await context.evidence.record({

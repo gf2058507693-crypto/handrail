@@ -38,3 +38,10 @@ body:
       description: Paste relevant errors, logs, or links. Remove secrets and sensitive data.
     validations:
       required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacted users and areas
+      description: Who is affected, how often, and what work is blocked?
+    validations:
+      required: true

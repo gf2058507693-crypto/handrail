@@ -34,7 +34,7 @@ export class EvidenceStore {
   async recordCommand(
     result: CommandResult,
     kind: EvidenceRecord['kind'] = 'command',
-    context: { ticket?: number; spec?: number; label?: string } = {},
+    context: { ticket?: number; spec?: number; label?: string; headSha?: string } = {},
   ): Promise<EvidenceRecord> {
     return this.record({
       kind,
@@ -49,6 +49,7 @@ export class EvidenceStore {
       meta: {
         timedOut: result.timedOut,
         label: context.label,
+        headSha: context.headSha,
       },
     });
   }
@@ -83,15 +84,27 @@ export class EvidenceStore {
   async assertChecksPassed(
     ticket: number,
     requireAtLeastOne: boolean,
+    headSha?: string,
+    requiredCommands: string[] = [],
   ): Promise<{ ok: boolean; reason?: string }> {
-    const checks = await this.checksFor(ticket);
+    const checks = (await this.checksFor(ticket)).filter(
+      (check) => headSha === undefined || check.meta?.headSha === headSha,
+    );
     if (checks.length === 0 && requireAtLeastOne) {
       return {
         ok: false,
         reason: `No check commands were recorded for #${ticket}. Run "handrail implement #${ticket}" or configure checks.`,
       };
     }
-    const failed = checks.filter((check) => check.exitCode !== 0);
+    const latest = new Map<string, EvidenceRecord>();
+    for (const check of checks) {
+      if (check.command) latest.set(check.command, check);
+    }
+    const missing = requiredCommands.filter((command) => !latest.has(command));
+    if (missing.length > 0) {
+      return { ok: false, reason: `Missing check evidence for #${ticket}: ${missing.join(', ')}` };
+    }
+    const failed = [...latest.values()].filter((check) => check.exitCode !== 0);
     if (failed.length > 0) {
       return {
         ok: false,

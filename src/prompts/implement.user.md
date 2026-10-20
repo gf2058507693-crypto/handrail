@@ -32,4 +32,4 @@ Base branch: {{baseBranch}}
 {{diff}}
 --- END CURRENT DIFF ---
 
-Follow the system prompt. Implement, verify, and commit on this branch.
+Follow the system prompt. Implement and verify on this branch; leave the commit to Handrail.

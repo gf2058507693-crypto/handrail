@@ -49,6 +49,9 @@ export async function createPullRequest(
   if ((await context.git.commitsAhead(base)) === 0) {
     throw new HandrailError('NO_COMMITS', `No commits on ${branch} compared to ${base}.`);
   }
+  await context.git.assertClean('Commit or stash changes before preparing the pull request.');
+  const headSha = await context.git.revParse('HEAD');
+  const baseSha = await context.git.revParse(base);
 
   if (context.config.workflow.requireReview && !options.skipReview) {
     const review = await loadReview(context, ticketNumber);
@@ -64,10 +67,21 @@ export async function createPullRequest(
         'Resolve the blocker findings and review again.',
       );
     }
+    if (review.headSha !== headSha || review.baseSha !== baseSha) {
+      throw new GateError(
+        `Review for #${ticketNumber} does not cover the current commit and base.`,
+        `Run "handrail review ${ticketNumber}" again.`,
+      );
+    }
   }
 
   if (context.config.workflow.requireChecks) {
-    const gate = await context.evidence.assertChecksPassed(ticketNumber, true);
+    const gate = await context.evidence.assertChecksPassed(
+      ticketNumber,
+      true,
+      headSha ?? undefined,
+      context.config.checks.commands,
+    );
     if (!gate.ok) {
       throw new GateError(gate.reason ?? 'Check evidence is missing.', 'Run the configured checks first.');
     }
@@ -98,7 +112,7 @@ export async function createPullRequest(
     spec: specNumber,
   });
   const narrative = parseNarrative(result.text);
-  const evidence = await evidenceMarkdown(context, ticketNumber);
+  const evidence = await evidenceMarkdown(context, ticketNumber, headSha ?? undefined);
   const body = renderPrBody({
     ticket,
     spec,
@@ -157,12 +171,12 @@ export async function createPullRequest(
   return { body, file, pr };
 }
 
-async function loadReview(context: Context, ticketNumber: number): Promise<ReviewResult | null> {
+async function loadReview(context: Context, ticketNumber: number): Promise<(ReviewResult & { headSha?: string | null; baseSha?: string | null }) | null> {
   const file = path.join(context.root, '.handrail', 'evidence', `review-${ticketNumber}.json`);
   const raw = await readTextIfExists(file);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as ReviewResult;
+    return JSON.parse(raw) as ReviewResult & { headSha?: string | null; baseSha?: string | null };
   } catch {
     return null;
   }

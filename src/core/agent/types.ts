@@ -4,6 +4,7 @@ import type { ToolMode } from './tools.js';
 export interface AgentRequest {
   kind:
     | 'intake'
+    | 'triage'
     | 'clarify'
     | 'spec'
     | 'tickets'

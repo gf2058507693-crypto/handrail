@@ -23,6 +23,8 @@ Handrail 是一个命令行研发流程引擎。它让 AI 代理真正参与软�
 
 Handrail 不会合并 PR，不会绕过分支保护，也不会把一句“测试通过了”变成一条通过记录。
 
+资料包中的 `grill-with-docs`、`to-spec`、`to-tickets`、`implement` + TDD、`code-review`、`pr`、`retro` 分别对应 Handrail 的澄清、规格、任务、实现、审查、PR 与复盘命令。代理负责执行，GitHub 保存正式工件，CI 与人工审查控制合并。使用 Handrail 命令时无需另装 Skills 插件。
+
 ---
 
 ## 为什么需要 Handrail
@@ -142,8 +144,11 @@ Handrail 会把完整提示词写到该命令的标准输入，并读取标准�
 # 1. 从 PRD 创建需求 Issue
 handrail intake --prd PRD.md --title "订单批量导入支持失败记录重试"
 
+# 可选：先调查外部提交或信息不完整的 Issue
+handrail triage 100 --apply
+
 # 2. 需求澄清。交互模式会一次只问一个关键问题。
-handrail clarify --interactive --comment
+handrail clarify --interactive --comment --write-docs
 
 # 3. 生成规格草稿，然后由人批准
 handrail spec
@@ -184,7 +189,8 @@ handrail run 101
 | `handrail init [dir]` | 生成流程文件、识别检查命令、可选创建标签 |
 | `handrail doctor` | 检查 Node、配置、Git、`gh`、认证、标签、检查命令和代理凭据 |
 | `handrail intake --prd <file>` | 创建需求 Issue |
-| `handrail clarify [issue]` | 记录已确认决策、待确认问题、非目标、术语和 ADR 候选 |
+| `handrail triage <issue> [--apply]` | 调查重复工单、现有行为和缺失信息；可选写回结论与标签 |
+| `handrail clarify [issue]` | 记录决策、假设与待确认问题；`--write-docs` 写入术语和待审批 ADR |
 | `handrail spec [requirement]` | 创建关联需求的规格 Issue |
 | `handrail approve spec <issue>` | 添加 `spec-approved` 标签，并记录批准人和规格正文哈希 |
 | `handrail tickets [spec]` | 生成垂直切片任务草稿，校验依赖图 |
@@ -211,8 +217,8 @@ Handrail 的门禁不是写在提示词里“请遵守”，而是落实在标�
 |---|---|---|
 | 规格就绪 | `spec-approved` 标签，在拆任务和实现前检查 | 按未评审的规格开工 |
 | 任务就绪 | `tickets-approved` 标签，在发布和实现前检查 | 按未评审的拆分开工 |
-| 检查有证据 | 证据库，在创建 PR 前检查 | 没跑测试却声称测试通过 |
-| 审查通过 | 审查结果 JSON，在创建 PR 前检查 | 跳过独立审查 |
+| 检查有证据 | 当前提交上每条配置检查的最新结果，在创建 PR 前检查 | 没为当前改动跑测试却声称通过 |
+| 审查通过 | 与当前提交绑定的审查结果，在创建 PR 前检查 | 重用过期的审查记录 |
 | 可以合并 | GitHub 分支保护、CI、CODEOWNERS | 自己批准自己、CI 失败仍合并、直接推主分支 |
 | 整体验收 | 所有任务已关闭、所有关联 PR 已合并、CI 全绿 | 父级 Issue 在还有未完成工作时被关闭 |
 
@@ -237,6 +243,10 @@ Handrail 记录的每一条证据都来自一次真实执行：
 ```
 
 PR 描述里的 Evidence 表格由这些记录生成。如果没有执行过任何检查，PR 会明确写“没有记录到命令”，策略检查会让 CI 失败。代码里不存在“把代理的一句话当成测试通过”的路径。
+
+对于复杂业务规则、关键计算和 Bug 修复，实现提示词要求在 Spec 约定的测试边界采用 Red → Green → Refactor。CLI 提交改动后执行配置检查，并按 Standards 与 Spec 两个维度做独立审查；有新提交时必须重新检查和审查。
+
+适合单次上下文的小改动可走仓库原生 GitHub 轻量流程：一个 Issue、独立分支、与风险相称的测试、独立审查和 PR。Handrail 的完整链路命令要求已批准的 Spec 与工单，不要只为凑流程而创建它们。涉及多个行为、迁移、安全或生产配置的改动使用完整流程。
 
 证据文件放在 `.handrail/evidence/`，默认不提交到 Git。真正长期保留的记录是 PR 讨论、CI 结果和合并提交。
 
