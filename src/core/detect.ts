@@ -108,23 +108,23 @@ export function renderCiWorkflow(detection: ProjectDetection, baseBranch: string
     '    name: Build and test',
     '    runs-on: ubuntu-latest',
     '    steps:',
-    '      - uses: actions/checkout@v4',
+    '      - uses: actions/checkout@v7',
   ];
 
   const lines = [...header];
 
   if (detection.stack === 'node') {
     lines.push(
-      '      - uses: actions/setup-node@v4',
+      '      - uses: actions/setup-node@v7',
       '        with:',
-      '          node-version: 20',
+      '          node-version: 24',
       detection.packageManager === 'npm' ? '          cache: npm' : '',
       ...detection.setup.map((command) => `      - run: ${quote(command)}`),
       ...detection.checks.map((command) => `      - run: ${quote(command)}`),
     );
   } else if (detection.stack === 'maven') {
     lines.push(
-      '      - uses: actions/setup-java@v4',
+      '      - uses: actions/setup-java@v6',
       '        with:',
       '          distribution: temurin',
       '          java-version: "17"',
@@ -133,7 +133,7 @@ export function renderCiWorkflow(detection: ProjectDetection, baseBranch: string
     );
   } else if (detection.stack === 'gradle') {
     lines.push(
-      '      - uses: actions/setup-java@v4',
+      '      - uses: actions/setup-java@v6',
       '        with:',
       '          distribution: temurin',
       '          java-version: "17"',
@@ -141,7 +141,7 @@ export function renderCiWorkflow(detection: ProjectDetection, baseBranch: string
     );
   } else if (detection.stack === 'python') {
     lines.push(
-      '      - uses: actions/setup-python@v5',
+      '      - uses: actions/setup-python@v7',
       '        with:',
       '          python-version: "3.12"',
       ...detection.setup.map((command) => `      - run: ${quote(command)}`),
@@ -149,7 +149,7 @@ export function renderCiWorkflow(detection: ProjectDetection, baseBranch: string
     );
   } else if (detection.stack === 'go') {
     lines.push(
-      '      - uses: actions/setup-go@v5',
+      '      - uses: actions/setup-go@v7',
       '        with:',
       '          go-version: "stable"',
       `      - run: ${quote('go test ./...')}`,
