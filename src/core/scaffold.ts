@@ -138,7 +138,7 @@ async function updateGitignore(root: string, dryRun: boolean): Promise<ScaffoldA
   if (missing.length === 0) return null;
   if (dryRun) return { path: '.gitignore', status: 'dry-run' };
   const prefix = current.trimEnd();
-  const content = `${prefix}${prefix ? '\n\n' : ''}${block.join('\n')}\n`;
+  const content = `${prefix}${prefix ? '\n\n' : ''}${missing.join('\n')}\n`;
   await writeText(file, content);
   return { path: '.gitignore', status: current ? 'overwrite' : 'create' };
 }

@@ -55,6 +55,15 @@ describe('scaffold', () => {
     expect(ignore).toContain('.handrail/state.json');
   });
 
+  it('does not duplicate gitignore artifact lines on a second run', async () => {
+    await scaffold(root, { projectName: 'demo' });
+    const first = await readFile(path.join(root, '.gitignore'), 'utf8');
+    await scaffold(root, { projectName: 'demo' });
+    const second = await readFile(path.join(root, '.gitignore'), 'utf8');
+    expect(second).toBe(first);
+    expect((second.match(/\.handrail\/evidence\//g) ?? []).length).toBe(1);
+  });
+
   it('skips existing files unless force is set', async () => {
     await writeFile(path.join(root, 'AGENTS.md'), 'custom');
     const result = await scaffold(root, { projectName: 'demo' });
