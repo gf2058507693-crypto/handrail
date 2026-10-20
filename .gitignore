@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# Handrail runtime artifacts. Config is committed; state and evidence are local.
+.handrail/state.json
+.handrail/evidence/
+.handrail/drafts/
+.handrail/tmp/

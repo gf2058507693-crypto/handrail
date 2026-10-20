@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "project": {
+    "name": "handrail",
+    "docsDir": "docs",
+    "adrDir": "docs/adr",
+    "glossary": "GLOSSARY.md"
+  },
+  "github": {
+    "repo": null,
+    "baseBranch": "main",
+    "labels": {
+      "requirement": "requirement",
+      "spec": "spec",
+      "task": "task",
+      "needsTriage": "needs-triage",
+      "needsInfo": "needs-info",
+      "specReview": "spec-review",
+      "specApproved": "spec-approved",
+      "ticketsApproved": "tickets-approved",
+      "needsTicketReview": "needs-ticket-review",
+      "readyForAgent": "ready-for-agent",
+      "readyForHuman": "ready-for-human",
+      "wontfix": "wontfix",
+      "blocked": "blocked"
+    }
+  },
+  "agent": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5",
+    "baseUrl": "https://api.anthropic.com",
+    "apiKeyEnv": "ANTHROPIC_API_KEY",
+    "maxTokens": 8192,
+    "maxTurns": 40,
+    "command": ["claude", "-p"],
+    "commandTimeoutMs": 1800000,
+    "allowedCommands": [],
+    "deniedCommands": [
+      "rm -rf /",
+      "git push --force",
+      "git reset --hard",
+      "git clean -fd",
+      "shutdown",
+      "reboot"
+    ]
+  },
+  "checks": {
+    "commands": ["npm test", "npm run build"],
+    "timeoutMs": 600000
+  },
+  "workflow": {
+    "requireSpecApproval": true,
+    "requireTicketsApproval": true,
+    "requireReview": true,
+    "requireChecks": true,
+    "requireCleanCI": true,
+    "branchPrefix": "feat/issue-",
+    "maxTicketsPerSpec": 12
+  }
+}

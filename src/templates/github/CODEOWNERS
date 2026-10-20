@@ -1,0 +1,6 @@
+# Replace these examples with real GitHub users or teams.
+# CODEOWNERS affects review routing only; it does not replace branch protection.
+#
+# /.github/                @your-org/repo-maintainers
+# /docs/adr/               @your-org/tech-leads
+# /src/                    @your-org/code-owners

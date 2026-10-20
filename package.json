@@ -1,0 +1,56 @@
+{
+  "name": "handrail",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Human-gated, evidence-backed AI delivery on GitHub",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gf2058507693-crypto/handrail.git"
+  },
+  "homepage": "https://github.com/gf2058507693-crypto/handrail#readme",
+  "bugs": {
+    "url": "https://github.com/gf2058507693-crypto/handrail/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "handrail": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "github",
+    "workflow",
+    "human-in-the-loop",
+    "spec-driven",
+    "traceability"
+  ],
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^5.0.5"
+  }
+}
